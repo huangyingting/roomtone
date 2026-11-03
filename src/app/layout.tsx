@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "@/original/roomtone.css";
 
 export const metadata: Metadata = {
-  title: "Roomtone — a little space of your own",
-  description: "Build a home, room by room. A relaxing 3D home designer with furniture, gardens, finishes and changing light.",
+  title: "Roomtone — design your apartment",
+  description: "The original Roomtone home builder, with its original models and settings, optimized with Next.js and Three.js.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><head><link rel="stylesheet" href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/fonts/fonts.css`} /></head><body>{children}</body></html>;
 }

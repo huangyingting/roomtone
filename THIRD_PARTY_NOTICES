@@ -1,0 +1,46 @@
+Roomtone original application
+----------------------------
+Source: https://github.com/madebysourasith-sudo/roomtone/
+Revision: cdcd63662c4aebb70857ba0d5e0552c73e38eb0f
+Author: madebysourasith-sudo
+
+src/original/roomtone.js, src/original/roomtone.css and
+src/original/markup.html are adapted from the original application at the
+user's request. The original interface, models, scene settings and behavior
+are retained. Modifications integrate Next.js and Three.js r187, self-host
+dependencies, cache/batch geometry, schedule rendering and reuse shadows.
+Upstream did not provide a general license; no license or ownership claim
+is added to upstream code. This repository's MIT license applies only to
+the independently authored integration and optimization code.
+
+Car Concept
+-----------
+Copyright 2024 Darmstadt Graphics Group GmbH.
+License: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+Source: https://github.com/KhronosGroup/glTF-Sample-Assets/tree/7d4ba189827916452eeadc82d4b712dbc6280a6f/Models/CarConcept
+public/models/car contains the unmodified compressed model and textures.
+The original Roomtone runtime retains its original material substitutions,
+normalization and model credit in the Garage panel.
+
+Three.js decoders
+-----------------
+public/decoders contains Draco and Basis Universal decoder files distributed
+with Three.js 0.187.0. Their source copyright/license headers are preserved.
+Three.js: https://github.com/mrdoob/three.js (MIT).
+src/lib/original-soft-shadows.js adapts Three.js r170's MIT-licensed
+PCFSoftShadowMap filter to r187 depth textures, retaining the original look.
+Draco: https://github.com/google/draco (Apache-2.0).
+Basis Universal: https://github.com/BinomialLLC/basis_universal (Apache-2.0).
+Full decoder licenses accompany the files in public/decoders.
+
+Rendering dependencies
+----------------------
+Unmodified Three.js (MIT), N8AO (ISC) and postprocessing (Zlib) license
+texts are distributed in public/licenses.
+
+Fonts
+-----
+Geist, Geist Mono and Instrument Serif are self-hosted copies of the same
+Google Fonts used by the original Roomtone. Their SIL Open Font License
+files are included in public/fonts.

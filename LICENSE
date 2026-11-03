@@ -1,5 +1,9 @@
 MIT License
 
+Applies only to independently authored integration and optimization code.
+Adapted upstream application and third-party assets are excluded.
+See THIRD_PARTY_NOTICES.
+
 Copyright (c) 2026 Roomtone contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

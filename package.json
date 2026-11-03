@@ -8,14 +8,16 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "tsx --test tests/model.test.ts tests/publish.test.mjs",
+    "test": "tsx --test tests/render-performance.test.mjs tests/publish.test.mjs",
     "test:e2e": "playwright test",
     "serve": "node scripts/serve.mjs",
     "publish": "node scripts/publish.mjs",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e"
   },
   "dependencies": {
+    "n8ao": "1.9.4",
     "next": "16.4.4",
+    "postprocessing": "6.39.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "three": "0.187.0"

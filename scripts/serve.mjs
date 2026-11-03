@@ -5,7 +5,7 @@ import { resolve, sep } from "node:path";
 const root = resolve("out");
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const port = Number(process.env.PORT || 4173);
-const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".txt": "text/plain" };
+const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".txt": "text/plain", ".wasm": "application/wasm", ".gltf": "model/gltf+json", ".bin": "application/octet-stream", ".ktx2": "image/ktx2", ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf" };
 createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url, `http://127.0.0.1:${port}`).pathname);
