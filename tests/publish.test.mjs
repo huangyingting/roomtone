@@ -31,7 +31,11 @@ function harness(overrides = {}) {
     if (command === "gh" && args.includes("POST")) { pagesExists = true; return ""; }
     if (command === "gh" && args[0] === "workflow" && overrides.workflowForbidden) throw new CommandError(command, args, { stderr: "gh: Forbidden (HTTP 403)" });
     if (command === "gh" && args[0] === "workflow" && overrides.workflowDelayed && dispatchAttempts++ < 2) throw new CommandError(command, args, { stderr: "gh: Not Found (HTTP 404)" });
-    if (command === "gh" && args[0] === "run" && args[1] === "list") return JSON.stringify(overrides.missingRun ? [] : [{ databaseId: 123, createdAt: "2026-11-03T07:00:01Z" }]);
+    if (command === "gh" && args[0] === "run" && args[1] === "list") {
+      if (args.includes("push") && overrides.unregisteredPush) throw new CommandError(command, args, { stderr: "gh: Not Found (HTTP 404)" });
+      if (args.includes("push")) return JSON.stringify(overrides.pushRun ? [{ databaseId: 456, createdAt: overrides.stalePush ? "2026-11-02T07:00:01Z" : "2026-11-03T07:00:01Z" }] : []);
+      return JSON.stringify(overrides.missingRun ? [] : [{ databaseId: 123, createdAt: "2026-11-03T07:00:01Z" }]);
+    }
     if (command === "gh" && args[0] === "run" && args[1] === "watch" && overrides.failedWorkflow) throw new CommandError(command, args, { stderr: "Workflow failed" });
     if (command === "git" && args.includes("push")) return "";
     if (command === "git" && args[0] === "remote" && args[1] === "add") return "";
@@ -100,6 +104,23 @@ test("delayed workflow registration retries only 404 responses", async () => {
 test("a missing deployment run times out without claiming success", async () => {
   const { calls, options } = harness({ missingRun: true });
   await assert.rejects(publish(options), /did not appear within one minute/);
-  assert.equal(calls.filter((call) => call[0] === "gh" && call[1] === "run" && call[2] === "list").length, 30);
+  assert.equal(calls.filter((call) => call[0] === "gh" && call[1] === "run" && call[2] === "list" && call.includes("workflow_dispatch")).length, 30);
   assert.ok(!calls.some((call) => call[0] === "verify"));
+});
+test("a fresh push run is reused instead of dispatching a competing deployment", async () => {
+  const { calls, options } = harness({ pushRun: true });
+  await publish(options);
+  assert.ok(!calls.some((call) => call[0] === "gh" && call[1] === "workflow"));
+  assert.ok(calls.some((call) => call[0] === "gh" && call[1] === "run" && call[2] === "watch" && call[3] === "456"));
+});
+test("an older push run cannot substitute for a new publication request", async () => {
+  const { calls, options } = harness({ pushRun: true, stalePush: true });
+  await publish(options);
+  assert.ok(calls.some((call) => call[0] === "gh" && call[1] === "workflow"));
+  assert.ok(calls.some((call) => call[0] === "gh" && call[1] === "run" && call[2] === "watch" && call[3] === "123"));
+});
+test("an unregistered push workflow falls back to the retryable manual dispatch", async () => {
+  const { calls, options } = harness({ unregisteredPush: true });
+  await publish(options);
+  assert.ok(calls.some((call) => call[0] === "gh" && call[1] === "workflow"));
 });

@@ -75,32 +75,49 @@ export async function publish({
     run("gh", ["repo", "create", repository, "--public", "--description", "A relaxing 3D home builder using Next.js and Three.js."]);
   }
   if (!origin) run("git", ["remote", "add", "origin", remote]);
+  const pushedAfter = Math.floor(now().getTime() / 1000) * 1000;
   log("Pushing the verified application…");
   // Use the authorized CLI credential helper without changing global Git configuration.
   run("git", ["-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential", "push", "-u", remote, "main"]);
   const pages = optionalApi(run, `repos/${repository}/pages`);
   if (!pages) run("gh", ["api", "--method", "POST", `repos/${repository}/pages`, "-f", "build_type=workflow"]);
   else if (requireRecord(pages, "Pages").build_type !== "workflow") run("gh", ["api", "--method", "PUT", `repos/${repository}/pages`, "-f", "build_type=workflow"]);
-  const dispatchedAfter = Math.floor(now().getTime() / 1000) * 1000;
-  let dispatched = false;
-  for (let attempt = 0; attempt < 30; attempt++) {
-    try {
-      run("gh", ["workflow", "run", "pages.yml", "--repo", repository, "--ref", "main"]);
-      dispatched = true;
-      break;
-    } catch (error) {
+  let runId;
+  // Reuse the push run so a duplicate dispatch cannot cancel it through concurrency.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let runs;
+    try { runs = JSON.parse(run("gh", ["run", "list", "--repo", repository, "--workflow", "pages.yml", "--commit", commit, "--event", "push", "--limit", "5", "--json", "databaseId,createdAt"])); }
+    catch (error) {
       if (!(error instanceof CommandError) || !/\bHTTP 404\b/.test(error.stderr)) throw error;
       await sleep(2000);
+      continue;
     }
-  }
-  if (!dispatched) throw new Error("GitHub has not registered the Pages workflow yet. Run npm run publish again.");
-  let runId;
-  for (let attempt = 0; attempt < 30; attempt++) {
-    const runs = JSON.parse(run("gh", ["run", "list", "--repo", repository, "--workflow", "pages.yml", "--commit", commit, "--event", "workflow_dispatch", "--limit", "5", "--json", "databaseId,createdAt"]));
     if (!Array.isArray(runs)) throw new Error("GitHub returned an invalid workflow-run list.");
-    const workflow = runs.find((entry) => Number.isInteger(entry.databaseId) && Date.parse(entry.createdAt) >= dispatchedAfter);
+    const workflow = runs.find((entry) => Number.isInteger(entry.databaseId) && Date.parse(entry.createdAt) >= pushedAfter);
     if (workflow) { runId = workflow.databaseId; break; }
     await sleep(2000);
+  }
+  if (!runId) {
+    const dispatchedAfter = Math.floor(now().getTime() / 1000) * 1000;
+    let dispatched = false;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      try {
+        run("gh", ["workflow", "run", "pages.yml", "--repo", repository, "--ref", "main"]);
+        dispatched = true;
+        break;
+      } catch (error) {
+        if (!(error instanceof CommandError) || !/\bHTTP 404\b/.test(error.stderr)) throw error;
+        await sleep(2000);
+      }
+    }
+    if (!dispatched) throw new Error("GitHub has not registered the Pages workflow yet. Run npm run publish again.");
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const runs = JSON.parse(run("gh", ["run", "list", "--repo", repository, "--workflow", "pages.yml", "--commit", commit, "--event", "workflow_dispatch", "--limit", "5", "--json", "databaseId,createdAt"]));
+      if (!Array.isArray(runs)) throw new Error("GitHub returned an invalid workflow-run list.");
+      const workflow = runs.find((entry) => Number.isInteger(entry.databaseId) && Date.parse(entry.createdAt) >= dispatchedAfter);
+      if (workflow) { runId = workflow.databaseId; break; }
+      await sleep(2000);
+    }
   }
   if (!runId) throw new Error("The deployment run did not appear within one minute. Check gh run list.");
   log(`Waiting for Pages workflow ${runId}…`);
