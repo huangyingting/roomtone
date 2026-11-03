@@ -61,13 +61,12 @@ With an authenticated GitHub CLI account:
 
 ```sh
 gh auth login
-gh repo create roomtone --public --source=. --remote=origin
-gh api --method POST repos/huangyingting/roomtone/pages -f build_type=workflow
-git push -u origin main
-gh run list --workflow pages.yml
+npm run publish
 ```
 
-If the repository or Pages site already exists, skip its creation command and ensure Pages uses **GitHub Actions** in repository Settings → Pages. For a different account or repository, adjust the API path. After the deployment succeeds, the expected project-site URL is `https://huangyingting.github.io/roomtone/`; this URL is not live until the repository is pushed and the Pages deployment succeeds.
+Run publication from a clean, committed `main` branch after `npm run verify`. The script uses your authenticated account, creates the public `roomtone` repository if needed, configures Pages for GitHub Actions, pushes through the CLI's credential helper without changing global Git settings, waits for the deployment workflow, checks the live HTML and JavaScript assets, and runs the full browser suite against the live URL. It refuses to overwrite an unrelated remote or change a private repository's visibility. Authentication, permissions, failed workflows, inaccessible assets and browser failures are explicit errors, never reported as successful publication.
+
+Use `npm run publish -- another-repository-name` for a different repository. Creating a Pages site requires repository administration permission; pushing this workflow also requires workflow-write authorization. If needed, run `gh auth refresh --scopes repo,workflow` and complete GitHub's browser approval. The expected default URL for the current account is `https://huangyingting.github.io/roomtone/`; it is not live until publication actually succeeds.
 
 ## Attribution
 
